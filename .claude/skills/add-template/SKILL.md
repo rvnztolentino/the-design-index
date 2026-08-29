@@ -81,6 +81,11 @@ persists or submits anywhere.
 Grep the file for `http://`, `https://`, `//fonts.`, and `src=` before adding it.
 One remote request breaks the offline guarantee for every downloader.
 
+In production this is enforced, not trusted: `vercel.json` serves `/templates/*`
+under `default-src 'none'`, so a remote fetch, script, webfont or form submission
+is blocked by the browser. A template that phones home looks broken on the live
+site but fine locally — which is exactly why the grep matters before merge.
+
 Templates are **not** bound to the site palette — they carry their own
 personality. Keep them minimal and flat: no 3D, no video backgrounds, no heavy
 motion.

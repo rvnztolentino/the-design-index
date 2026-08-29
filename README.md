@@ -24,11 +24,10 @@ Node 22.12 or newer.
 
 ## Adding a template
 
-Three steps. **Never touch layout code.**
+Four steps, in this order. **Never touch layout code.**
 
 1. **Drop the file** into `public/templates/<id>.html`.
-2. **Shoot the thumbnail**: `npm run thumbs -- --only=<id>`
-3. **Add one object** to `src/data/templates.json`:
+2. **Add one object** to `src/data/templates.json`:
 
 ```json
 {
@@ -49,7 +48,15 @@ Three steps. **Never touch layout code.**
 | `categories` | One or more ids from `src/lib/categories.ts`. A typo fails the build. |
 | `date` | `YYYY-MM-DD`. Rendered as `2026.08.28`. |
 | `recommended` / `rank` | Both or neither — the schema rejects one without the other. `rank` orders the Recommended section, lowest first. |
-| `file`, `thumbnail` | Optional. Default to `/templates/<id>.html` and `/thumbnails/<id>.png`. |
+| `file`, `thumbnail` | Optional. Default to `/templates/<id>.html` and `/thumbnails/<id>.webp`, falling back to `.png`. |
+
+3. **Shoot the thumbnail**: `npm run thumbs -- --only=<id>`
+4. **Verify**: `npm run build` — the schema only runs at build time, so this is
+   what actually accepts or rejects the entry.
+
+The entry has to exist before step 3: `scripts/thumbnails.mjs` reads
+`templates.json` to decide what to shoot. Run it first and it exits without
+shooting anything.
 
 A template listed in two categories appears in both sections. Categories with
 no entries are dropped at build time rather than rendered empty.
@@ -63,7 +70,7 @@ Array order is display order.
 
 ```bash
 npm run thumbs              # every template, plus public/og.png
-npm run thumbs -- --only=kiri
+npm run thumbs -- --only=<id>
 ```
 
 Shots are 1440×900 (16:10 — the ratio the grid and modal both hold).
@@ -87,7 +94,9 @@ CHROME_PATH=/path/to/chromium npm run thumbs             # or point at a binary
 
 - **One self-contained `.html` file.** CSS in `<style>`, JS in `<script>`.
 - **No network requests.** No webfonts, no CDNs, no hotlinked images. Use local
-  font stacks, inline SVG, CSS shapes, or solid blocks.
+  font stacks, inline SVG, CSS shapes, or solid blocks. This is enforced in
+  production by a Content-Security-Policy on `/templates/*` (see [Security](#security)),
+  so a template that phones home breaks visibly instead of silently.
 - **A full page**, not a component.
 - **Interactive**: buttons click, dropdowns open, tabs switch, modals appear,
   inputs accept text. Nothing persists or submits anywhere.
@@ -102,9 +111,6 @@ empty array, and the page renders a single quiet line in place of the sections.
 Add the first entry as described above and the Recommended and category sections
 appear on their own.
 
-Two finished templates are still on disk at `public/templates/` (`aster.html`
-and `kiri.html`, with thumbnails alongside) but are unlisted. Add an entry for
-either to bring it back, or delete the files if they are not wanted.
 
 ---
 
@@ -117,7 +123,7 @@ either to bring it back, or delete the files if they are not wanted.
 | Data | Astro content collection over `src/data/templates.json`, Zod-validated |
 | Modal | Native `<dialog>` + ~40 lines of vanilla JS |
 | Font | Raleway from Google Fonts, weights 300/400/500 |
-| Thumbnails | Local screenshot script, committed as PNGs |
+| Thumbnails | Local screenshot script, committed as lossless WebP (PNG fallback) |
 
 **The Tailwind theme enforces the design rules rather than documenting them.**
 `src/styles/global.css` clears Tailwind's defaults (`--color-*: initial`,
@@ -135,7 +141,8 @@ colours, which keeps the palette literally three values.
 
 Static output on Vercel's free tier, Git-connected.
 
-1. Create a **public** GitHub repo and push.
+1. Create a **public** GitHub repo and push. It must be public, or every
+   "View source" link 404s.
 2. Import it on Vercel. `vercel.json` sets framework, build command and output
    directory, so no dashboard configuration is needed.
 3. Claim a `.vercel.app` subdomain, then update **`src/lib/site.ts`**:
@@ -147,6 +154,34 @@ Static output on Vercel's free tier, Git-connected.
 Everything is pre-generated. No server-side rendering, no API routes, no
 serverless functions, no edge middleware, nothing stored — no auth, sessions,
 database, cookies, localStorage or analytics.
+
+---
+
+## Security
+
+Nothing is stored and there is no server: no auth, sessions, database, cookies,
+localStorage or analytics. Every route is a pre-generated file.
+
+The one real surface is that **templates are arbitrary HTML served from the
+site's own origin**, and once the repo is public anyone can open a PR adding one.
+`vercel.json` constrains what a template can do:
+
+- `/templates/*` is served under `default-src 'none'`, with inline `<style>` and
+  `<script>` allowed and images limited to `data:` URIs. A template cannot fetch,
+  XHR, open a WebSocket, pull a remote script or webfont, or submit a form. The
+  "self-contained, no network requests" rule above is enforced by the browser
+  rather than merely trusted.
+- `form-action 'none'` and `base-uri 'none'` stop a template being used to phish
+  on the real domain.
+- The index page has its own policy, scoped to `/`.
+
+**Reviewing template PRs is still the primary control.** The CSP is defence in
+depth, and it catches honest mistakes (a forgotten Google Fonts link) as
+reliably as malicious ones. See [SECURITY.md](SECURITY.md) to report an issue.
+
+> **Adding a page?** The site CSP is scoped to `/`, not `/(.*)`, so that
+> `/templates/*` gets exactly one policy instead of two overlapping ones. A new
+> route needs its own entry in `vercel.json` or it ships with no CSP.
 
 ---
 
@@ -188,4 +223,6 @@ Where the brief was silent or said two things, this is what was chosen and why.
 
 ## Licence
 
-Free to use, no attribution needed.
+[CC0 1.0 Universal](LICENSE) — the site, the tooling and every template are
+dedicated to the public domain. Free to use, modify and sell, no attribution
+needed. Contributions are accepted on the same terms.

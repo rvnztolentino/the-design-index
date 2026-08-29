@@ -53,6 +53,13 @@ they carry their own personality and never import site CSS.
 routes, middleware, or a server island. Nothing is stored: no auth, sessions,
 database, cookies, localStorage or analytics.
 
+`vercel.json` scopes the site CSP to `/` and a separate, stricter one to
+`/templates/(.*)`, deliberately not `/(.*)`, so a template is never served two
+overlapping policies. **A new route therefore ships with no CSP until you add an
+entry.** The templates policy is `default-src 'none'` — it enforces the
+"no network requests" contract in the browser, so don't loosen it to make a
+template work; fix the template.
+
 Shipped JS is `src/scripts/modal.ts` and nothing else. Keep it that way — native
 `<dialog>` already provides Escape, the focus trap, focus restore and page
 inertness, so don't reimplement them.
@@ -71,3 +78,9 @@ in the same change as the template.
 Graph, JSON-LD and every "View source" link. A wrong `repo` breaks View source
 on every card. `public/robots.txt` and `public/sitemap.xml` hardcode the domain
 too — update all four together.
+
+## Licence
+
+CC0 1.0 (`LICENSE`). Public domain, no attribution. Contributions come in on the
+same terms — see `CONTRIBUTING.md`. Don't add a template derived from a paid
+theme or another site's markup.
