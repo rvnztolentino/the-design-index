@@ -1,33 +1,79 @@
 # The Design Index
 
 A static, publicly browsable index of website and app templates. Every entry is
-a single self-contained `.html` file: open it, download it, hand it to Claude
-Code or Cursor as a starting point.
+a single self-contained `.html` file — open it, download it, hand it to an AI
+coding agent as a starting point. Everything is public domain.
 
-Live: `https://rvnztolentino-the-design-index.vercel.app` (see [Deploying](#deploying))
+Live: https://rvnztolentino-the-design-index.vercel.app
 
----
+## Tech stack
+
+- **Astro 7**, static output, zero JavaScript shipped except one modal script
+- **Tailwind v4** via `@tailwindcss/vite`, theme defined in `src/styles/global.css`
+- **TypeScript**, with the template index validated by Zod through an Astro
+  content collection over `src/data/templates.json`
+- **Raleway** from Google Fonts, weights 300/400/500
+- Thumbnails from a local screenshot script, committed as images
+- Deployed static to Vercel
+
+No framework runtime, no database, no API routes, no serverless functions.
+
+## Setup
+
+Requires Node 22.12 or newer.
+
+```bash
+git clone https://github.com/rvnztolentino/the-design-index.git
+cd the-design-index
+npm install
+```
 
 ## Running it
 
 ```bash
-npm install
-npm run dev        # http://localhost:4321
-npm run build      # static output into dist/
-npm run preview    # serve dist/
-npm run thumbs     # regenerate every thumbnail + the OG card
+npm run dev       # dev server on http://localhost:4321
+npm run build     # static output into dist/
+npm run preview   # serve the built dist/
+npm run thumbs    # regenerate thumbnails and the Open Graph card
 ```
 
-Node 22.12 or newer.
+There is no test suite and no linter. `npm run build` is the gate — the content
+schema runs there and nowhere else, so it is what actually accepts or rejects a
+template entry.
 
----
+## Configuration
+
+The site itself needs no environment variables, keys or external services.
+Nothing is stored and nothing is fetched at request time.
+
+Two optional variables affect the thumbnail script only:
+
+- `CHROME_PATH` — point at a Chromium binary if the script cannot find a browser
+- Installing Playwright (`npm i -D playwright && npx playwright install chromium`)
+  makes the script prefer it. It is not a declared dependency; without it the
+  script falls back to a locally installed Chrome, so a fresh clone can still
+  regenerate images.
+
+Installing `cwebp` is also optional. With it, screenshots are encoded as lossless
+WebP; without it the PNG is kept and the content schema resolves whichever format
+is on disk.
+
+The deployed domain is hardcoded in several files rather than read from an
+environment variable — see [Deploying](#deploying).
 
 ## Adding a template
 
-Four steps, in this order. **Never touch layout code.**
+Four steps, in this order. Never touch layout code.
 
-1. **Drop the file** into `public/templates/<id>.html`.
-2. **Add one object** to `src/data/templates.json`:
+1. Write the template to `public/templates/<id>.html`.
+2. Add one object to `src/data/templates.json`.
+3. Shoot the thumbnail: `npm run thumbs -- --only=<id>`
+4. Verify with `npm run build`.
+
+The entry has to exist before step 3, because `scripts/thumbnails.mjs` reads
+`templates.json` to decide what to shoot. Run it earlier and it shoots nothing.
+
+An entry looks like this:
 
 ```json
 {
@@ -42,29 +88,61 @@ Four steps, in this order. **Never touch layout code.**
 }
 ```
 
-| Field | Notes |
-| --- | --- |
-| `id` | Lowercase, digits and hyphens. Also the default file and thumbnail name. |
-| `categories` | One or more ids from `src/lib/categories.ts`. A typo fails the build. |
-| `date` | `YYYY-MM-DD`. Rendered as `2026.08.28`. |
-| `recommended` / `rank` | Both or neither — the schema rejects one without the other. `rank` orders the Recommended section, lowest first. |
-| `file`, `thumbnail` | Optional. Default to `/templates/<id>.html` and `/thumbnails/<id>.webp`, falling back to `.png`. |
+- `id` — lowercase letters, digits and hyphens. Doubles as the default file and
+  thumbnail name. Duplicates fail the build.
+- `categories` — one or more ids from `src/lib/categories.ts`. A typo fails the
+  build rather than rendering an empty section.
+- `date` — `YYYY-MM-DD`, displayed as `2026.08.28`.
+- `recommended` and `rank` — both or neither; the schema rejects one without the
+  other. Lower `rank` sorts first in the Recommended section.
+- `file` and `thumbnail` — optional, derived from `id`. Set them only to break
+  the convention. Both are constrained to a root-relative path so a stray value
+  cannot become an absolute or `javascript:` URL.
 
-3. **Shoot the thumbnail**: `npm run thumbs -- --only=<id>`
-4. **Verify**: `npm run build` — the schema only runs at build time, so this is
-   what actually accepts or rejects the entry.
+A template listed in two categories appears in both. Categories with no entries
+are dropped at build time. To add a category, add one entry to the `CATEGORIES`
+array in `src/lib/categories.ts` — array order is display order.
 
-The entry has to exist before step 3: `scripts/thumbnails.mjs` reads
-`templates.json` to decide what to shoot. Run it first and it exits without
-shooting anything.
+Commit the generated thumbnail alongside the entry. Images are produced on
+demand; nothing renders at request time.
 
-A template listed in two categories appears in both sections. Categories with
-no entries are dropped at build time rather than rendered empty.
+## What a template must be
 
-To add a **category**, add one entry to the array in `src/lib/categories.ts`.
-Array order is display order.
+- One self-contained `.html` file, CSS in `<style>` and JS in `<script>`.
+- No network requests. No webfonts, no CDNs, no hotlinked images. Use local font
+  stacks, inline SVG, CSS shapes or solid blocks. This is enforced in production
+  by the Content-Security-Policy described under [Security](#security), so a
+  template that phones home breaks visibly rather than silently.
+- A full page, not a component.
+- Genuinely interactive: buttons click, dropdowns open, tabs switch, modals
+  appear, inputs accept text. Nothing persists or submits anywhere.
+- Responsive.
+- Readable source. No minified or obfuscated script — people are meant to read
+  and edit the file.
 
----
+Templates are deliberately not bound to the site palette. The site chrome is
+black and white; templates carry their own personality. Keep them minimal and
+flat: no 3D, no video backgrounds, no heavy motion.
+
+## Working on the site itself
+
+`src/styles/global.css` clears Tailwind's default colour, radius, font, type and
+tracking scales to `initial` and defines only three colours: ink, bone and one
+grey.
+
+This means **a utility outside the theme compiles to no CSS and raises no
+error**. `bg-blue-500`, `text-sm` and `rounded-lg` all vanish quietly. Spacing
+and layout utilities are untouched. Confirm a token exists in `global.css`
+before reaching for it.
+
+Hairlines are the palette at low alpha (`border-grey/30`) rather than a fourth
+colour. `rounded-full` is the only radius left, kept for the rank seals. Type
+sizes are the custom scale: `text-micro` through `text-title`.
+
+The site is `output: 'static'`. Do not add an adapter, API routes or middleware.
+The only JavaScript shipped is `src/scripts/modal.ts`; native `<dialog>` already
+provides Escape, the focus trap, focus restore and page inertness, so none of
+that is reimplemented.
 
 ## Regenerating thumbnails
 
@@ -73,169 +151,58 @@ npm run thumbs              # every template, plus public/og.png
 npm run thumbs -- --only=<id>
 ```
 
-Shots are 1440×900 (16:10 — the ratio the grid and modal both hold).
-Run it on demand and commit the images; nothing renders at request time.
-
-A full run also rebuilds `public/og.png`, and does so even when the index is
-empty — the card is built from its own markup, not from the templates.
-
-Shots are captured 1:1 and encoded as lossless WebP when `cwebp` is available
-(PNG otherwise — the content schema resolves whichever format is committed).
-
-The script uses **Playwright** when it is installed, and otherwise falls back to
-a locally installed Chrome, so a fresh clone can regenerate images without
-downloading a browser. Both paths produce the same shot.
-
-```bash
-npm i -D playwright && npx playwright install chromium   # optional
-CHROME_PATH=/path/to/chromium npm run thumbs             # or point at a binary
-```
-
----
-
-## What a template must be
-
-- **One self-contained `.html` file.** CSS in `<style>`, JS in `<script>`.
-- **No network requests.** No webfonts, no CDNs, no hotlinked images. Use local
-  font stacks, inline SVG, CSS shapes, or solid blocks. This is enforced in
-  production by a Content-Security-Policy on `/templates/*` (see [Security](#security)),
-  so a template that phones home breaks visibly instead of silently.
-- **A full page**, not a component.
-- **Interactive**: buttons click, dropdowns open, tabs switch, modals appear,
-  inputs accept text. Nothing persists or submits anywhere.
-- **Responsive.**
-
-Templates are *not* bound to the site palette — the chrome is black and white,
-the templates have their own personality. Keep them minimal and flat: no 3D, no
-video backgrounds, no heavy motion.
-
-The index currently lists **no templates** — `src/data/templates.json` is an
-empty array, and the page renders a single quiet line in place of the sections.
-Add the first entry as described above and the Recommended and category sections
-appear on their own.
-
-
----
-
-## How it is built
-
-| Piece | Choice |
-| --- | --- |
-| Framework | Astro, static output, zero JS shipped except the modal |
-| Styling | Tailwind v4, theme in `src/styles/global.css` |
-| Data | Astro content collection over `src/data/templates.json`, Zod-validated |
-| Modal | Native `<dialog>` + ~40 lines of vanilla JS |
-| Font | Raleway from Google Fonts, weights 300/400/500 |
-| Thumbnails | Local screenshot script, committed as lossless WebP (PNG fallback) |
-
-**The Tailwind theme enforces the design rules rather than documenting them.**
-`src/styles/global.css` clears Tailwind's defaults (`--color-*: initial`,
-`--radius-*: initial`) and defines only ink, bone and one grey. There is no
-rounded-corner scale left to reach for, and a stray `bg-blue-500` compiles to
-nothing. `rounded-full` survives as a static utility for the one deliberate
-curve: the rank seals.
-
-Hairlines are the palette at low alpha (`border-grey/30`) rather than extra
-colours, which keeps the palette literally three values.
-
----
+Shots are 1440×900 at 1:1 — the 16:10 ratio the grid and modal both hold. A full
+run also rebuilds `public/og.png`, and does so even when the index is empty,
+because the card is built from its own markup rather than from the templates.
 
 ## Deploying
 
-Static output on Vercel's free tier, Git-connected.
+Static output on Vercel's free tier, Git-connected. `vercel.json` sets the
+framework, build command, output directory and response headers, so no dashboard
+configuration is needed.
 
-1. Create a **public** GitHub repo and push. It must be public, or every
-   "View source" link 404s.
-2. Import it on Vercel. `vercel.json` sets framework, build command and output
-   directory, so no dashboard configuration is needed.
-3. Claim a `.vercel.app` subdomain. Vercel prefixes it with your username, so
-   the result looks like `<user>-<repo>.vercel.app`. The domain is hardcoded in
-   six places — update all of them:
+1. Push to a **public** GitHub repo. It must be public, or every "View source"
+   link 404s.
+2. Import it on Vercel.
+3. Claim a `.vercel.app` subdomain. Vercel prefixes it with your username, so the
+   result looks like `<user>-<repo>.vercel.app`.
+4. Update the domain everywhere it is hardcoded: `SITE.url` in `src/lib/site.ts`,
+   `site` in `astro.config.mjs`, the `Sitemap:` line in `public/robots.txt`, the
+   `<loc>` in `public/sitemap.xml`, the footer of `OG_HTML` in
+   `scripts/thumbnails.mjs`, and the "Live:" line at the top of this file.
+5. Run `npm run thumbs` and commit `public/og.png`. The domain is rendered into
+   that image, so changing the source alone leaves shared links showing the old
+   one.
 
-   | File | What |
-   | --- | --- |
-   | `src/lib/site.ts` | `SITE.url` — canonical, Open Graph, JSON-LD |
-   | `astro.config.mjs` | `site` |
-   | `public/robots.txt` | the `Sitemap:` line |
-   | `public/sitemap.xml` | the `<loc>` |
-   | `scripts/thumbnails.mjs` | the footer of `OG_HTML` |
-   | `README.md` | the "Live:" line above |
-
-   Then `npm run thumbs` and commit `public/og.png` — the domain is rendered
-   into that image, so changing the source alone leaves shared links showing the
-   old one.
-
-   `SITE.repo` is separate: it points at the GitHub repo, not the deploy.
-
-Everything is pre-generated. No server-side rendering, no API routes, no
-serverless functions, no edge middleware, nothing stored — no auth, sessions,
-database, cookies, localStorage or analytics.
-
----
+`SITE.repo` is separate and points at the GitHub repo, not the deploy. Every
+"View source" link is built from it, so a wrong value breaks all of them.
 
 ## Security
 
 Nothing is stored and there is no server: no auth, sessions, database, cookies,
 localStorage or analytics. Every route is a pre-generated file.
 
-The one real surface is that **templates are arbitrary HTML served from the
-site's own origin**, and once the repo is public anyone can open a PR adding one.
-`vercel.json` constrains what a template can do:
+The one real surface is that templates are arbitrary HTML served from the site's
+own origin, and anyone can submit one by pull request. `vercel.json` constrains
+what a template can do: `/templates/*` is served under `default-src 'none'` with
+inline `<style>` and `<script>` allowed and images limited to `data:` URIs. A
+template cannot fetch, open a WebSocket, pull a remote script or webfont, or
+submit a form. `form-action 'none'` and `base-uri 'none'` stop a template being
+used to phish on the real domain.
 
-- `/templates/*` is served under `default-src 'none'`, with inline `<style>` and
-  `<script>` allowed and images limited to `data:` URIs. A template cannot fetch,
-  XHR, open a WebSocket, pull a remote script or webfont, or submit a form. The
-  "self-contained, no network requests" rule above is enforced by the browser
-  rather than merely trusted.
-- `form-action 'none'` and `base-uri 'none'` stop a template being used to phish
-  on the real domain.
-- The index page has its own policy, scoped to `/`.
+Reviewing template pull requests is still the primary control; the policy is
+defence in depth, and it catches honest mistakes as reliably as malicious ones.
 
-**Reviewing template PRs is still the primary control.** The CSP is defence in
-depth, and it catches honest mistakes (a forgotten Google Fonts link) as
-reliably as malicious ones. See [SECURITY.md](SECURITY.md) to report an issue.
+The site CSP is scoped to `/` rather than `/(.*)`, so `/templates/*` receives
+exactly one policy instead of two overlapping ones. A new route needs its own
+entry in `vercel.json` or it ships with no CSP.
 
-> **Adding a page?** The site CSP is scoped to `/`, not `/(.*)`, so that
-> `/templates/*` gets exactly one policy instead of two overlapping ones. A new
-> route needs its own entry in `vercel.json` or it ships with no CSP.
+To report a vulnerability, see [SECURITY.md](SECURITY.md).
 
----
+## Contributing
 
-## Judgment calls
-
-Where the brief was silent or said two things, this is what was chosen and why.
-
-- **Raleway is loaded from the Google Fonts CDN**, with preconnect to both font
-  hosts and only weights 300/400/500 requested. The build order mentioned
-  Fontsource, but the tech-stack and settled-decisions sections both specify
-  Google Fonts and describe the preconnect; those won.
-- **Thumbnail ratio is 16:10**, matching a browser viewport, so screenshots look
-  natural rather than cropped.
-- **The whole card is an `<a>` pointing at the template file**, which JS
-  intercepts to open the modal. Without JS — or on a cmd/middle click — it still
-  goes somewhere useful: the live preview. Search engines see real links.
-- **One `<dialog>` is pre-rendered per template** rather than one populated by
-  JS, so all modal content is in the static HTML for crawlers and the script
-  stays tiny. Escape, the focus trap, focus restore and page inertness come free
-  from `showModal()`; only opening, the close button and the click-outside are
-  coded. Scroll lock is `html:has(dialog[open])` — pure CSS.
-- **"View source" points at the GitHub blob URL** for the file. Browsers block
-  `view-source:` links, and the raw file is already what Preview and Download
-  serve, so GitHub is the only target that shows *source* rather than a rendered
-  page. This is why `SITE.repo` must be correct.
-- **`file` and `thumbnail` are optional** and derived from `id`, so a normal
-  addition is one small object. Set them only to break the convention.
-- **No sitemap integration.** `public/sitemap.xml` and `public/robots.txt` are
-  static one-liners; a single-page site does not need a generator, and the brief
-  asked for no integrations beyond search visibility.
-- **`public/og.png` is generated by the same script** as the thumbnails, so
-  shared links have a card without adding an image service.
-- **Aster is filed under "Online clothing stores" only**, not also "Online
-  shops". The specific category is the flagship; listing it twice just duplicated
-  the entry.
-- **Playwright is not a declared dependency.** The brief specifies it and the
-  script prefers it, but the Chrome fallback means a clone can regenerate
-  thumbnails with nothing installed. Add it whenever you want the Playwright path.
+Templates are the most useful contribution. See [CONTRIBUTING.md](CONTRIBUTING.md)
+for what gets one merged.
 
 ## Licence
 
