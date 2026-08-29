@@ -74,10 +74,21 @@ in the same change as the template.
 
 ## When the site URL changes
 
-`SITE.url` and `SITE.repo` in `src/lib/site.ts` feed the canonical tag, Open
-Graph, JSON-LD and every "View source" link. A wrong `repo` breaks View source
-on every card. `public/robots.txt` and `public/sitemap.xml` hardcode the domain
-too — update all four together.
+The deployed domain is hardcoded in six places. Change one, change all six:
+
+- `src/lib/site.ts` — `SITE.url`, feeding canonical, Open Graph and JSON-LD
+- `astro.config.mjs` — `site`
+- `public/robots.txt` — the `Sitemap:` line
+- `public/sitemap.xml` — the `<loc>`
+- `scripts/thumbnails.mjs` — the footer of `OG_HTML`
+- `README.md` — the "Live:" line
+
+Then run `npm run thumbs` and commit `public/og.png`: the domain is **rendered
+into that image**, so editing the source alone leaves every shared link showing
+the old one. A full run rebuilds the card even when the index is empty.
+
+`SITE.repo` is separate and points at GitHub, not the deploy. A wrong `repo`
+breaks "View source" on every card.
 
 ## Licence
 

@@ -137,7 +137,7 @@ const OG_HTML = `<!doctype html><meta charset="utf-8">
   <div class="rule"></div>
   <div class="foot" style="margin-top:22px">
     <span>Free to use, no attribution needed.</span>
-    <span>the-design-index.vercel.app</span>
+    <span>rvnztolentino-the-design-index.vercel.app</span>
   </div>
 </div>`;
 
@@ -154,13 +154,17 @@ const all = JSON.parse(
 );
 const templates = all.filter((t) => !only || t.id === only);
 
-// An empty index is a legitimate state, so say so and stop without an error.
-if (!all.length) {
-  console.log("No templates listed yet — nothing to shoot.");
-  process.exit(0);
-}
-if (!templates.length) {
-  console.error(`No template with id "${only}".`);
+/**
+ * An empty index is a legitimate state. There is nothing to shoot, but the OG
+ * card is built from its own markup rather than from the index, so a full run
+ * still has work to do — don't exit before it. Only --only has nothing left.
+ */
+if (only && !templates.length) {
+  console.error(
+    all.length
+      ? `No template with id "${only}".`
+      : `No template with id "${only}" — the index is empty.`,
+  );
   process.exit(1);
 }
 
@@ -174,7 +178,11 @@ if (!backend) {
 }
 
 await mkdir(join(ROOT, "public/thumbnails"), { recursive: true });
-console.log(`Shooting ${templates.length} template(s) via ${backend.name}\n`);
+console.log(
+  templates.length
+    ? `Shooting ${templates.length} template(s) via ${backend.name}\n`
+    : `Index is empty — building the OG card only, via ${backend.name}\n`,
+);
 
 for (const t of templates) {
   const src = join(ROOT, "public", t.file ?? `/templates/${t.id}.html`);

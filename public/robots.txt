@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://the-design-index.vercel.app/sitemap.xml
+Sitemap: https://rvnztolentino-the-design-index.vercel.app/sitemap.xml

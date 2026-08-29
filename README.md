@@ -4,7 +4,7 @@ A static, publicly browsable index of website and app templates. Every entry is
 a single self-contained `.html` file: open it, download it, hand it to Claude
 Code or Cursor as a starting point.
 
-Live: `https://the-design-index.vercel.app` (see [Deploying](#deploying))
+Live: `https://rvnztolentino-the-design-index.vercel.app` (see [Deploying](#deploying))
 
 ---
 
@@ -76,6 +76,9 @@ npm run thumbs -- --only=<id>
 Shots are 1440×900 (16:10 — the ratio the grid and modal both hold).
 Run it on demand and commit the images; nothing renders at request time.
 
+A full run also rebuilds `public/og.png`, and does so even when the index is
+empty — the card is built from its own markup, not from the templates.
+
 Shots are captured 1:1 and encoded as lossless WebP when `cwebp` is available
 (PNG otherwise — the content schema resolves whichever format is committed).
 
@@ -145,11 +148,24 @@ Static output on Vercel's free tier, Git-connected.
    "View source" link 404s.
 2. Import it on Vercel. `vercel.json` sets framework, build command and output
    directory, so no dashboard configuration is needed.
-3. Claim a `.vercel.app` subdomain, then update **`src/lib/site.ts`**:
-   - `url` — used for canonical, Open Graph and JSON-LD
-   - `repo` — where every "View source" link points
+3. Claim a `.vercel.app` subdomain. Vercel prefixes it with your username, so
+   the result looks like `<user>-<repo>.vercel.app`. The domain is hardcoded in
+   six places — update all of them:
 
-   and the domain in `public/robots.txt` and `public/sitemap.xml`.
+   | File | What |
+   | --- | --- |
+   | `src/lib/site.ts` | `SITE.url` — canonical, Open Graph, JSON-LD |
+   | `astro.config.mjs` | `site` |
+   | `public/robots.txt` | the `Sitemap:` line |
+   | `public/sitemap.xml` | the `<loc>` |
+   | `scripts/thumbnails.mjs` | the footer of `OG_HTML` |
+   | `README.md` | the "Live:" line above |
+
+   Then `npm run thumbs` and commit `public/og.png` — the domain is rendered
+   into that image, so changing the source alone leaves shared links showing the
+   old one.
+
+   `SITE.repo` is separate: it points at the GitHub repo, not the deploy.
 
 Everything is pre-generated. No server-side rendering, no API routes, no
 serverless functions, no edge middleware, nothing stored — no auth, sessions,

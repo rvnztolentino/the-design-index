@@ -24,10 +24,11 @@ what to shoot:
 3. `npm run thumbs -- --only=<id>`
 4. `npm run build` — the schema only runs here, so this is the real check
 
-Shooting before step 2 fails: `--only=<id>` on a missing id exits 1 with
-`No template with id "<id>"`, and on an empty index the script prints
-`No templates listed yet — nothing to shoot.` and exits **0** without shooting.
-A green exit code is not evidence a thumbnail was produced — check the file.
+Shooting before step 2 fails: `--only=<id>` on an id that is not in
+`templates.json` exits 1 with `No template with id "<id>"` (or
+`... - the index is empty`). A bare `npm run thumbs` on an empty index exits 0
+having rebuilt only the OG card. Either way a green exit code is not evidence a
+thumbnail was produced — check the file.
 
 ## The entry
 
