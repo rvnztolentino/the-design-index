@@ -1,0 +1,52 @@
+---
+import { categoryName } from "../lib/categories";
+import { pad } from "../lib/site";
+
+interface Props {
+  id: string;
+  name: string;
+  description: string;
+  categories: readonly string[];
+  thumbnail: string;
+  file: string;
+  /** Rank numeral for the seal, shown only in the Recommended section. */
+  rank?: number;
+}
+
+const { id, name, description, categories, thumbnail, file, rank } =
+  Astro.props;
+---
+
+<a
+  href={file}
+  data-template={id}
+  class="group block focus-visible:outline-offset-6"
+>
+  <div
+    class="relative border border-grey/30 transition-colors duration-300 group-hover:border-bone group-focus-visible:border-bone"
+  >
+    <img
+      src={thumbnail}
+      alt={`Screenshot of the ${name} template`}
+      width="1440"
+      height="900"
+      loading="lazy"
+      decoding="async"
+      class="block aspect-16/10 w-full object-cover object-top brightness-80 transition duration-300 group-hover:brightness-100 group-focus-visible:brightness-100"
+    />
+    {
+      rank !== undefined && (
+        <span
+          aria-hidden="true"
+          class="absolute top-4 left-4 flex size-9 items-center justify-center rounded-full border border-bone bg-ink/65 text-micro tabular-nums text-bone"
+        >
+          {pad(rank)}
+        </span>
+      )
+    }
+  </div>
+
+  <h3 class="mt-5 text-name font-normal text-bone">{name}</h3>
+  <p class="mt-2 max-w-[46ch] text-small text-grey">{description}</p>
+  <p class="mt-4 label text-grey">{categoryName(categories[0]!)}</p>
+</a>

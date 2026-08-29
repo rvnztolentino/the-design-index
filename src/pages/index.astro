@@ -1,0 +1,133 @@
+---
+import { getCollection, type CollectionEntry } from "astro:content";
+import Base from "../layouts/Base.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+import TemplateCard from "../components/TemplateCard.astro";
+import TemplateGrid from "../components/TemplateGrid.astro";
+import TemplateModal from "../components/TemplateModal.astro";
+import { CATEGORIES } from "../lib/categories";
+import { SITE } from "../lib/site";
+import rawTemplates from "../data/templates.json";
+
+type Template = CollectionEntry<"templates">["data"];
+
+/**
+ * Astro never registers a collection whose data file is empty, and
+ * getCollection() warns when it cannot find one. While the index is empty
+ * there is nothing to ask for, so skip the call. The collection stays the
+ * source of truth, schema and all, the moment there is a single entry.
+ */
+const templates: Template[] = rawTemplates.length
+  ? (await getCollection("templates")).map((e) => e.data)
+  : [];
+
+/** Newest first, then alphabetical, so the order is stable across builds. */
+const byDateThenName = (a: (typeof templates)[number], b: typeof a) =>
+  b.date.getTime() - a.date.getTime() || a.name.localeCompare(b.name);
+
+const recommended = templates
+  .filter((t) => t.recommended)
+  .sort((a, b) => a.rank! - b.rank!);
+
+/** Empty categories are dropped here, so the markup never renders one. */
+const sections = CATEGORIES.map((category) => ({
+  ...category,
+  items: templates
+    .filter((t) => t.categories.includes(category.id))
+    .sort(byDateThenName),
+})).filter((section) => section.items.length > 0);
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: SITE.name,
+  description: SITE.description,
+  url: SITE.url,
+  hasPart: templates.map((t) => ({
+    "@type": "CreativeWork",
+    name: t.name,
+    description: t.description,
+    url: new URL(t.file, SITE.url).href,
+    dateCreated: t.date.toISOString().slice(0, 10),
+    creator: { "@type": "Person", name: t.createdBy },
+    license: "https://creativecommons.org/publicdomain/zero/1.0/",
+  })),
+};
+---
+
+<Base>
+  <div class="mx-auto w-full max-w-[1160px] px-6 sm:px-10">
+    <header class="pt-20 sm:pt-28">
+      <p class="wordmark text-bone">
+        The Design Index
+      </p>
+      <p class="mt-8 max-w-[68ch] text-lead font-light text-grey">
+        A hand-kept index of website and app templates, one self-contained HTML
+        file each. Download the one you like and hand it to your AI coding agent.
+      </p>
+      <hr class="mt-14 border-0 border-t border-grey/25" />
+    </header>
+
+    <main>
+      {
+        templates.length === 0 && (
+          <p class="mt-24 text-body text-grey sm:mt-28">
+            No templates listed yet.
+          </p>
+        )
+      }
+
+      {
+        recommended.length > 0 && (
+          <section class="mt-24 sm:mt-28" aria-labelledby="recommended">
+            <SectionHeading
+              id="recommended"
+              label="Recommended"
+              count={recommended.length}
+            />
+            <TemplateGrid labelledby="recommended">
+              {recommended.map((t) => (
+                <div role="listitem">
+                  <TemplateCard {...t} />
+                </div>
+              ))}
+            </TemplateGrid>
+          </section>
+        )
+      }
+
+      {
+        sections.map((section) => (
+          <section class="mt-24 sm:mt-28" aria-labelledby={`cat-${section.id}`}>
+            <SectionHeading
+              id={`cat-${section.id}`}
+              label={section.name}
+              count={section.items.length}
+            />
+            <TemplateGrid labelledby={`cat-${section.id}`}>
+              {section.items.map((t) => (
+                <div role="listitem">
+                  <TemplateCard {...t} rank={undefined} />
+                </div>
+              ))}
+            </TemplateGrid>
+          </section>
+        ))
+      }
+    </main>
+
+    <footer class="mt-28 sm:mt-32 pb-24">
+      <hr class="border-0 border-t border-grey/25" />
+      <p class="mt-8 text-small text-grey">Free to use, no attribution needed.</p>
+    </footer>
+  </div>
+
+  {templates.map((t) => <TemplateModal {...t} />)}
+
+  <script
+    is:inline
+    type="application/ld+json"
+    set:html={JSON.stringify(jsonLd).replace(/</g, "\\u003c")}
+  />
+  <script src="../scripts/modal.ts"></script>
+</Base>

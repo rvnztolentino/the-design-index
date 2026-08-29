@@ -1,0 +1,114 @@
+---
+import { categoryName } from "../lib/categories";
+import { formatDate, sourceUrl } from "../lib/site";
+
+interface Props {
+  id: string;
+  name: string;
+  description: string;
+  categories: readonly string[];
+  date: Date;
+  createdBy: string;
+  thumbnail: string;
+  file: string;
+}
+
+const { id, name, description, categories, date, createdBy, thumbnail, file } =
+  Astro.props;
+
+const meta = [
+  { label: "Categories", value: categories.map(categoryName).join(", ") },
+  { label: "Date", value: formatDate(date) },
+  { label: "Created by", value: createdBy },
+];
+---
+
+<dialog
+  id={`modal-${id}`}
+  aria-labelledby={`modal-${id}-title`}
+  class="relative m-auto w-[min(880px,calc(100vw-2rem))] max-h-[calc(100dvh-2rem)] overflow-y-auto border border-grey/40 bg-ink p-0 text-bone"
+>
+  <button
+    type="button"
+    data-close
+    aria-label="Close"
+    class="absolute top-1.5 right-1.5 z-10 flex size-10 items-center justify-center bg-ink text-body text-grey transition-colors hover:text-bone"
+  >
+    <svg
+      width="11"
+      height="11"
+      viewBox="0 0 11 11"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1"
+      aria-hidden="true"
+    >
+      <path d="M0.5 0.5 L10.5 10.5 M10.5 0.5 L0.5 10.5"></path>
+    </svg>
+  </button>
+
+  <div class="grid md:grid-cols-[55fr_45fr]">
+    <div class="flex items-center border-b border-grey/25 md:border-r md:border-b-0">
+      <img
+        src={thumbnail}
+        alt={`Screenshot of the ${name} template`}
+        width="1440"
+        height="900"
+        loading="lazy"
+        decoding="async"
+        class="block aspect-16/10 w-full object-cover object-top"
+      />
+    </div>
+
+    <div class="p-8 sm:p-10">
+      <h2 id={`modal-${id}-title`} class="text-title font-normal text-bone">
+        {name}
+      </h2>
+      <p class="mt-4 max-w-[38ch] text-small text-grey">{description}</p>
+
+      <dl class="mt-9 grid grid-cols-[auto_1fr] gap-x-6 gap-y-3.5">
+        {
+          meta.map((row) => (
+            <>
+              <dt class="label pt-px text-grey">{row.label}</dt>
+              <dd class="text-small text-bone">{row.value}</dd>
+            </>
+          ))
+        }
+      </dl>
+
+      <hr class="mt-9 border-0 border-t border-grey/25" />
+
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a
+          href={file}
+          download={`${id}.html`}
+          class="label inline-flex h-11 items-center bg-bone px-6 text-ink transition-opacity hover:opacity-85"
+        >
+          Download
+        </a>
+        <a
+          href={file}
+          target="_blank"
+          rel="noopener"
+          class="label inline-flex h-11 items-center border border-grey/50 px-6 text-bone transition-colors hover:border-bone"
+        >
+          Preview
+        </a>
+      </div>
+
+      <a
+        href={sourceUrl(file)}
+        target="_blank"
+        rel="noopener"
+        class="mt-6 inline-block text-small text-grey underline underline-offset-4 transition-colors hover:text-bone"
+      >
+        View source
+      </a>
+
+      <p class="mt-4 max-w-[40ch] text-small text-grey">
+        Download the file and hand it to your AI coding agent.
+      </p>
+    </div>
+  </div>
+</dialog>

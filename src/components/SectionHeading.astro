@@ -1,0 +1,17 @@
+---
+import { pad } from "../lib/site";
+
+interface Props {
+  label: string;
+  count: number;
+  id?: string;
+}
+
+const { label, count, id } = Astro.props;
+---
+
+<div class="flex items-baseline gap-6">
+  <h2 id={id} class="label shrink-0 text-bone">{label}</h2>
+  <span aria-hidden="true" class="h-px min-w-6 flex-1 bg-grey/30"></span>
+  <span class="text-micro tabular-nums text-grey">{pad(count)}</span>
+</div>

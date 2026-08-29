@@ -1,0 +1,14 @@
+---
+interface Props {
+  labelledby?: string;
+}
+const { labelledby } = Astro.props;
+---
+
+<div
+  role="list"
+  aria-labelledby={labelledby}
+  class="mt-10 grid gap-x-8 gap-y-16 sm:grid-cols-2 sm:gap-x-10 lg:grid-cols-3"
+>
+  <slot />
+</div>

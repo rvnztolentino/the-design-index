@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   The Design Index — theme
+   The palette and radius scale are cleared and redefined here on purpose.
+   Anything outside these three colours simply does not compile into a utility,
+   and `rounded-*` has no scale left, so drift is structurally impossible.
+   The one survivor is `rounded-full`, a static utility — the rank seals.
+--------------------------------------------------------------------------- */
+
+@theme {
+  /* Wipe Tailwind's defaults. */
+  --color-*: initial;
+  --radius-*: initial;
+  --font-*: initial;
+  --text-*: initial;
+  --tracking-*: initial;
+
+  /* Mechanisms, not colours. */
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* The entire palette. Ink, bone, one grey. */
+  --color-ink: #0f0e0c;
+  --color-bone: #ece7de;
+  --color-grey: #857f74;
+
+  --font-sans: "Raleway", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+
+  /* Type scale. Small at the bottom, modest at the top. */
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 1.4;
+  --text-label: 0.75rem;
+  --text-label--line-height: 1.4;
+  --text-small: 0.8125rem;
+  --text-small--line-height: 1.6;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.75;
+  --text-lead: 1.0625rem;
+  --text-lead--line-height: 1.7;
+  --text-name: 1.25rem;
+  --text-name--line-height: 1.3;
+  --text-title: 1.625rem;
+  --text-title--line-height: 1.25;
+
+  --tracking-normal: 0;
+  --tracking-wide: 0.08em;
+  --tracking-wider: 0.16em;
+  --tracking-widest: 0.3em;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    background-color: var(--color-ink);
+    color: var(--color-bone);
+    font-family: var(--font-sans);
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: var(--color-bone);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--color-bone);
+    outline-offset: 3px;
+  }
+
+  /* Native <dialog> paints its own backdrop; ours is near-black, no blur. */
+  dialog::backdrop {
+    background-color: rgb(6 5 4 / 0.88);
+  }
+
+  dialog {
+    max-width: none;
+    max-height: none;
+  }
+}
+
+@utility label {
+  font-size: var(--text-label);
+  line-height: 1.4;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+@layer base {
+  html:has(dialog[open]) {
+    overflow: hidden;
+  }
+}
+
+/* The wordmark: the label treatment, opened up further. It is not a banner. */
+@utility wordmark {
+  font-size: var(--text-label);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+}
