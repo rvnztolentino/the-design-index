@@ -4,8 +4,6 @@ A static, publicly browsable index of website and app templates. Every entry is
 a single self-contained `.html` file — open it, download it, hand it to an AI
 coding agent as a starting point. Everything is public domain.
 
-Live: https://rvnztolentino-the-design-index.vercel.app
-
 ## Tech stack
 
 - **Astro 7**, static output, zero JavaScript shipped except one modal script
