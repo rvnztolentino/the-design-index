@@ -40,7 +40,8 @@ exfiltrate data, or reach the parent page, please report it.
 - Missing rate limits, CSRF tokens or auth hardening — there is nothing to rate
   limit and no session to forge.
 - Findings from automated scanners with no demonstrated impact on a static site.
-- The absence of `Strict-Transport-Security` preloading. `vercel.app` is already
-  in the browser preload list.
+- The absence of `Strict-Transport-Security` preloading. The site sends HSTS
+  with `includeSubDomains` and is served HTTPS-only; preload submission is
+  made on the apex `rvnztolentino.com`, outside this repo.
 - Anything requiring an attacker to already control the repo or the Vercel
   account.

@@ -74,14 +74,17 @@ in the same change as the template.
 
 ## When the site URL changes
 
-The deployed domain is hardcoded in six places. Change one, change all six:
+The deployed domain is hardcoded in five places. Change one, change all five:
 
 - `src/lib/site.ts` — `SITE.url`, feeding canonical, Open Graph and JSON-LD
 - `astro.config.mjs` — `site`
 - `public/robots.txt` — the `Sitemap:` line
 - `public/sitemap.xml` — the `<loc>`
 - `scripts/thumbnails.mjs` — the footer of `OG_HTML`
-- `README.md` — the "Live:" line
+
+Adding the domain in the Vercel dashboard comes first, so DNS and the certificate
+are live before the new URL ships. `vercel.json` needs no change: its rules are
+path-scoped, not host-scoped.
 
 Then run `npm run thumbs` and commit `public/og.png`: the domain is **rendered
 into that image**, so editing the source alone leaves every shared link showing

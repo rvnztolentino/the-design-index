@@ -1,7 +1,7 @@
 export const SITE = {
   name: "The Design Index",
-  /** Update if a different .vercel.app subdomain is claimed at deploy time. */
-  url: "https://rvnztolentino-the-design-index.vercel.app",
+  /** The deployed domain. Change here and in the other four places listed in .claude/CLAUDE.md. */
+  url: "https://thedesignindex.rvnztolentino.com",
   description:
     "A hand-kept index of website and app templates. Every entry is a single self-contained HTML file, free to download and free to use.",
   repo: "https://github.com/rvnztolentino/the-design-index",

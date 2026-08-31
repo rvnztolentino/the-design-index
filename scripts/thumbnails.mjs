@@ -137,7 +137,7 @@ const OG_HTML = `<!doctype html><meta charset="utf-8">
   <div class="rule"></div>
   <div class="foot" style="margin-top:22px">
     <span>Free to use, no attribution needed.</span>
-    <span>rvnztolentino-the-design-index.vercel.app</span>
+    <span>thedesignindex.rvnztolentino.com</span>
   </div>
 </div>`;
 

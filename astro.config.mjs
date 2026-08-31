@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://rvnztolentino-the-design-index.vercel.app',
+  site: 'https://thedesignindex.rvnztolentino.com',
   output: 'static',
   vite: {
     plugins: [tailwindcss()]
