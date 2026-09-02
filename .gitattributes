@@ -1,0 +1,12 @@
+# GitHub Linguist
+#
+# The language bar should describe the site, not the corpus it indexes.
+#
+# Every template in public/templates/ is a self-contained document with its CSS
+# and JS inlined, so Linguist attributes the whole file to HTML. The site's own
+# source is ~14 KB of .astro and barely grows, so a couple of templates would
+# put HTML permanently on top of the bar.
+#
+# linguist-vendored drops these from the language stats only. They stay tracked,
+# browsable, diffable and searchable on GitHub.
+public/templates/** linguist-vendored
