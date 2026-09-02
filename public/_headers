@@ -1,0 +1,60 @@
+# Response headers for Cloudflare Pages.
+#
+# Astro copies public/ into the build output verbatim, so this file ships as
+# dist/_headers, which is where Pages looks for it. Pages parses it and does not
+# serve it.
+#
+# Three facts about how Pages matches a request decide the shape of this file:
+#
+#   1. `*` greedily matches every character, including `/` and the empty string.
+#      `/*` therefore matches the bare root as well as every path under it.
+#   2. A pattern with no `*` matches that one exact path and nothing else, so `/`
+#      is the home page alone.
+#   3. Every rule a request matches contributes its headers, and when two rules
+#      set the same header name the values are joined with a comma.
+#
+# Rule 3 is the one that bites. A comma inside Content-Security-Policy means two
+# separate policies to a browser, and it then enforces the intersection of both.
+# So the CSP lives on `/` and on `/templates/*`: patterns that cannot both match
+# one request. Widening either to `/*` would stack the site policy on top of
+# every template. A new route ships with no CSP until it is given an entry here.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+
+/
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'; upgrade-insecure-requests
+
+# `default-src 'none'` is what enforces the "a template makes no network
+# requests" contract in the browser. Fix the template, never this line.
+#
+# The Cache-Control here restates what Pages already defaults to. It is written
+# out because it is a decision: an edited template must reach a returning visitor
+# immediately, so this namespace revalidates every time.
+#
+# Every response under /templates/ is sandboxed by this rule, the 404 page
+# included. A miss there renders unstyled, which is correct: nothing under
+# /templates/ should be able to pull in site assets.
+/templates/*
+  Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; media-src data:; font-src data:; form-action 'none'; base-uri 'none'; frame-ancestors 'self'
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Content-hashed build output: the filename changes whenever the bytes do.
+# Vercel set this automatically. Pages defaults every asset to
+# `max-age=0, must-revalidate`, which costs a revalidation round trip on the
+# render-blocking stylesheet for every repeat visit.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/thumbnails/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=2592000
+
+# The project also answers on <project>.pages.dev, serving the same pages as the
+# custom domain. Vercel redirected its deployment URL to the production domain;
+# Pages does not, so the mirror is kept out of search results here instead.
+# Branch previews already get this header from Pages itself.
+https://:project.pages.dev/*
+  X-Robots-Tag: noindex
