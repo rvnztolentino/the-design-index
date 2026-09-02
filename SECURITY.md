@@ -29,7 +29,7 @@ template that:
 - tries to read or write anything outside itself
 - ships obfuscated or minified script with no readable source
 
-**2. A gap in the headers.** `vercel.json` serves `/templates/*` under
+**2. A gap in the headers.** `public/_headers` serves `/templates/*` under
 `default-src 'none'` with `form-action 'none'` and `base-uri 'none'`, so a
 template cannot fetch, XHR, open a WebSocket, load a remote script or webfont,
 or submit a form. If you find a way for a template to escape that policy,
@@ -43,5 +43,5 @@ exfiltrate data, or reach the parent page, please report it.
 - The absence of `Strict-Transport-Security` preloading. The site sends HSTS
   with `includeSubDomains` and is served HTTPS-only; preload submission is
   made on the apex `rvnztolentino.com`, outside this repo.
-- Anything requiring an attacker to already control the repo or the Vercel
+- Anything requiring an attacker to already control the repo or the Cloudflare
   account.
